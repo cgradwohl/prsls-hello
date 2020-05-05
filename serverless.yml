@@ -1,0 +1,46 @@
+service: prsls-hello
+
+# Global Provider configs
+provider:
+  name: aws
+  runtime: nodejs12.x
+  environment:
+    FOO: BAR
+  # the reason for two tags props is that some AWS resources don't listen to stack tags!
+  stackTags:
+    TEAM: Senzo
+    SERVICE: ${self:service}
+  tags:
+    TEAM: Senzo
+    SERVICE: ${self:service}
+  stage: dev
+  region: us-east-1
+  # ALL THE FUNCTIONS WILL HAVE THESE PERMISIIONS FROM : provider.iamRoleStatements
+  iamRoleStatements:
+    - Effect: Allow
+      Action: dynamodb:GetItem
+      Resource: !GetAtt Table.Arn
+
+# API GATEWAY is auto created for you
+functions:
+  hello:
+    handler: handler.hello
+    environment:
+      TABLE_NAME: !Ref Table
+    events:
+      - http:
+          path: /
+          method: get
+
+# CF resource templates defined here
+resources:
+  Resources:
+    Table:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+  Outputs:
+    TableName:
+      Value: !Ref Table
